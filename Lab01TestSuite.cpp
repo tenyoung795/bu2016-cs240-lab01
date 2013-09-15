@@ -2,7 +2,9 @@
 #include "Lab01.h"
 
 #include <TestSuite.h>
+#include <MultiTest.h>
 #include <Assert.h>
+#include <utility>
 #include <iostream>
 #include <ostream>
 #include <sstream>
@@ -28,20 +30,23 @@ class temporarilyRedirectCout // exploits RAII to auto-restore buffer regardless
     ~temporarilyRedirectCout() { cout.rdbuf(buf); }
 };
 
+static int empty[]{};
+static int singleton[]{0};
+static int regularArray[]{0, 2, 4, 6, 8, 7, 5, 3, 1};
+static int maxFirst[]{8, 4, 2, 0, 1, 3, 5, 7};
+static int maxLast[]{0, 1, 2, 3, 4, 5, 6, 7, 8};
+static int lowSingleton[]{-10001};
+
 Lab01TestSuite::Lab01TestSuite() noexcept: ConcurrentTestSuite(
 {
-    {"testQuestion1a", [](Lab01 &lab)
+    {"testQuestion1a", ConcurrentMultiTest<Lab01, pair<int *const, int>, int>
     {
-		static int empty[]{};
-		static int singleton[]{0};
-		static int regularArray[]{0, 2, 4, 6, 8, 7, 5, 3, 1};
-		static int maxFirst[]{8, 4, 2, 0, 1, 3, 5, 7};
-        static int maxLast[]{0, 1, 2, 3, 4, 5, 6, 7, 8};
-        static int lowSingleton[]{-10001};
-
-		static const map<pair<int *, int>, int> testCases
-		{
-			{{nullptr, 1}, -10000},
+        [](Lab01 &lab, const pair<int *const, int> &testCase)
+        {
+            return lab.question1a(testCase.first, testCase.second);
+        },
+        {
+            {{nullptr, 1}, -10000},
 			{{empty, 0}, -10000},
 			{{singleton, 1}, singleton[0]},
 			{{regularArray, extent<decltype(regularArray)>::value}, 8},
@@ -49,12 +54,6 @@ Lab01TestSuite::Lab01TestSuite() noexcept: ConcurrentTestSuite(
 			{{maxFirst, extent<decltype(maxFirst)>::value}, 8},
             {{maxLast, extent<decltype(maxLast)>::value}, 8},
             {{lowSingleton, 1}, lowSingleton[0]}
-		};
-
-		for (auto &testCase : testCases)
-		{
-			assertEquals(int,
-				testCase.second, lab.question1a(testCase.first.first, testCase.first.second));
 		}
 	}},
 	{"testQuestion2", [](Lab01 &lab)
@@ -80,13 +79,15 @@ Lab01TestSuite::Lab01TestSuite() noexcept: ConcurrentTestSuite(
             {{1, 5}, vector<int>{2, 4}}
         };
 
-        lock_guard<mutex> lock(coutMutex);
         stringstream s;
-        auto tmp = temporarilyRedirectCout(s);
-				
+        				
 		for (auto &testCase : testCases)
         {
-            lab.question2(testCase.first.first, testCase.first.second);
+            {
+                lock_guard<mutex> lock(coutMutex);
+                auto tmp = temporarilyRedirectCout(s);
+                lab.question2(testCase.first.first, testCase.first.second);
+            }
             string line;
             for (int expected : testCase.second)
             {
@@ -110,65 +111,43 @@ Lab01TestSuite::Lab01TestSuite() noexcept: ConcurrentTestSuite(
             s.clear();
         }
 	}},
-    {"testQuestion3Quick", [](Lab01 &lab)
+    {"testQuestion3", ConcurrentMultiTest<Lab01, pair<const int, int>, int>
     {
-        static const map<pair<int, int>, int> testCases
+        [](Lab01 &lab, const pair<const int, int> &testCase)
+        {
+            return lab.question3(testCase.first, testCase.second);
+        },
         {
             {{0, 1}, -1},
             {{1, 0}, -1},
             {{1, 2}, 2},
             {{2, 1}, 2},
             {{2, 3}, 6},
-            {{3, 2}, 6}
-        };
-
-        for (auto &testCase : testCases)
-        {
-            assertEquals(int,
-                testCase.second, lab.question3(testCase.first.first, testCase.first.second));
+            {{3, 2}, 6},
+            {{1, INT_MAX}, INT_MAX},
+            {{INT_MAX, 1}, INT_MAX},
+            {{2, INT_MAX}, -1},
+            {{INT_MAX, 2}, -1}
         }
     }},
-    {"testQuestion3EdgePass1", [](Lab01 &lab)
+    {"testQuestion4", ConcurrentMultiTest<Lab01, string, string>
     {
-        assertEquals(int, INT_MAX, lab.question3(1, INT_MAX));
-
-    }},
-    {"testQuestion3EdgePass2", [](Lab01 &lab)
-    {
-        assertEquals(int, INT_MAX, lab.question3(INT_MAX, 1));
-
-    }},
-    {"testQuestion3EdgeFail1", [](Lab01 &lab)
-    {
-        assertEquals(int, -1, lab.question3(2, INT_MAX));
-
-    }},
-    {"testQuestion3EdgeFail2", [](Lab01 &lab)
-    {
-        assertEquals(int, -1, lab.question3(INT_MAX, 2));
-
-    }},
-    {"testQuestion4", [](Lab01 &lab)
-    {
-        static const map<string, string> testCases
+        &Lab01::question4,       
         {
             {"", ""},
             {"a", "a"},
             {"bar", "rab"},
             {"bob", "bob"}
-        };
-        for (auto &testCase : testCases)
-        {
-            assertEquals(string, testCase.second, lab.question4(testCase.first));
         }
     }},
     {"testQuestion5", [](Lab01 &lab)
     {
-        lock_guard<mutex> lock(coutMutex);
         stringstream s;
-        auto tmp = temporarilyRedirectCout(s);
-
-        lab.question5();
+        {
+            lock_guard<mutex> lock(coutMutex);
+            auto tmp = temporarilyRedirectCout(s);
+            lab.question5();
+        }
         
         string line;
         int expected;
@@ -213,11 +192,12 @@ Lab01TestSuite::Lab01TestSuite() noexcept: ConcurrentTestSuite(
     }},
     {"testQuestion6", [](Lab01 &lab)
     {
-        lock_guard<mutex> lock(coutMutex);
         stringstream s;
-        auto tmp = temporarilyRedirectCout(s);
-
-        lab.question6();
+        {
+            lock_guard<mutex> lock(coutMutex);
+            auto tmp = temporarilyRedirectCout(s);
+            lab.question6();
+        }
         
         assertEquals(string,
             "X\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\n"
