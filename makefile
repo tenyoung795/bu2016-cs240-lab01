@@ -2,7 +2,7 @@
 
 CC = g++
 OPTIONS = -std=c++0x -Wall -g
-LIBRARIES = -pthread -lassert -ltestsuite 
+LIBRARIES = -pthread -lassert
 OUTPUT = lab01
 OBJECTS = Driver.o Lab01.o Lab01TestSuite.o
 

@@ -1,6 +1,7 @@
 #include "Lab01TestSuite.h"
 #include "Lab01.h"
 
+#include <TestSuite.h>
 #include <Assert.h>
 #include <iostream>
 #include <ostream>
@@ -27,7 +28,7 @@ class temporarilyRedirectCout // exploits RAII to auto-restore buffer regardless
     ~temporarilyRedirectCout() { cout.rdbuf(buf); }
 };
 
-Lab01TestSuite::Lab01TestSuite() noexcept: TestSuite(
+Lab01TestSuite::Lab01TestSuite() noexcept: ConcurrentTestSuite(
 {
     {"testQuestion1a", [](Lab01 &lab)
     {

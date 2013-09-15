@@ -3,9 +3,17 @@
 
 #include "Lab01.h"
 #include <TestSuite.h>
+#include <ostream>
+#include <utility>
 #include <mutex>
 
-class Lab01TestSuite: public TestSuite<Lab01>
+template <class A, class B>
+ostream &operator<<(ostream &os, const pair<A, B> &p)
+{
+    return os << '(' << p.first << ", " << p.second << ')';
+}
+
+class Lab01TestSuite: public ConcurrentTestSuite<Lab01>
 {
     static mutex coutMutex;
 
