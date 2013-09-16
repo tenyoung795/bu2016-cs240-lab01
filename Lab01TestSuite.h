@@ -13,9 +13,10 @@ ostream &operator<<(ostream &os, const pair<A, B> &p)
     return os << '(' << p.first << ", " << p.second << ')';
 }
 
-class Lab01TestSuite: public ConcurrentTestSuite<Lab01>
+class Lab01TestSuite: public ConcurrentTestSuite<>
 {
     static mutex coutMutex;
+    static Lab01 lab;
 
     public:
     Lab01TestSuite() noexcept;

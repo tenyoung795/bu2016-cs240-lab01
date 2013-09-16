@@ -4,6 +4,7 @@
 #include <TestSuite.h>
 #include <MultiTest.h>
 #include <Assert.h>
+#include <functional>
 #include <utility>
 #include <iostream>
 #include <ostream>
@@ -21,6 +22,7 @@
 using namespace std;
 
 mutex Lab01TestSuite::coutMutex;
+Lab01 Lab01TestSuite::lab;
 
 class temporarilyRedirectCout // exploits RAII to auto-restore buffer regardless of an exception
 {
@@ -39,9 +41,9 @@ static int lowSingleton[]{-10001};
 
 Lab01TestSuite::Lab01TestSuite() noexcept: ConcurrentTestSuite(
 {
-    {"testQuestion1a", ConcurrentMultiTest<Lab01, pair<int *const, int>, int>
+    {"testQuestion1a", ConcurrentMultiTest<pair<int *const, int>, int>
     {
-        [](Lab01 &lab, const pair<int *const, int> &testCase)
+        [](const pair<int *const, int> &testCase)
         {
             return lab.question1a(testCase.first, testCase.second);
         },
@@ -56,7 +58,7 @@ Lab01TestSuite::Lab01TestSuite() noexcept: ConcurrentTestSuite(
             {{lowSingleton, 1}, lowSingleton[0]}
 		}
 	}},
-	{"testQuestion2", [](Lab01 &lab)
+	{"testQuestion2", []()
 	{
 		static const map<pair<int, int>, vector<int>> testCases
 		{
@@ -111,9 +113,9 @@ Lab01TestSuite::Lab01TestSuite() noexcept: ConcurrentTestSuite(
             s.clear();
         }
 	}},
-    {"testQuestion3", ConcurrentMultiTest<Lab01, pair<const int, int>, int>
+    {"testQuestion3", ConcurrentMultiTest<pair<const int, int>, int>
     {
-        [](Lab01 &lab, const pair<const int, int> &testCase)
+        [](const pair<const int, int> &testCase)
         {
             return lab.question3(testCase.first, testCase.second);
         },
@@ -130,9 +132,9 @@ Lab01TestSuite::Lab01TestSuite() noexcept: ConcurrentTestSuite(
             {{INT_MAX, 2}, -1}
         }
     }},
-    {"testQuestion4", ConcurrentMultiTest<Lab01, string, string>
+    {"testQuestion4", ConcurrentMultiTest<string, string>
     {
-        &Lab01::question4,       
+        [](const string &s) { return lab.question4(s); },
         {
             {"", ""},
             {"a", "a"},
@@ -140,7 +142,7 @@ Lab01TestSuite::Lab01TestSuite() noexcept: ConcurrentTestSuite(
             {"bob", "bob"}
         }
     }},
-    {"testQuestion5", [](Lab01 &lab)
+    {"testQuestion5", []()
     {
         stringstream s;
         {
@@ -190,7 +192,7 @@ Lab01TestSuite::Lab01TestSuite() noexcept: ConcurrentTestSuite(
         assertEquals(int, 101, expected);
         assertFalse(getline(s, line));
     }},
-    {"testQuestion6", [](Lab01 &lab)
+    {"testQuestion6", []()
     {
         stringstream s;
         {
