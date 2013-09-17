@@ -8,14 +8,14 @@
 #include <mutex>
 
 template <class A, class B>
-ostream &operator<<(ostream &os, const pair<A, B> &p)
+std::ostream &operator<<(std::ostream &os, const std::pair<A, B> &p)
 {
     return os << '(' << p.first << ", " << p.second << ')';
 }
 
 class Lab01TestSuite: public ConcurrentTestSuite<>
 {
-    static mutex coutMutex;
+    static std::mutex coutMutex;
     static Lab01 lab;
 
     public:
